@@ -9,13 +9,19 @@ class Chef
   class Client
     include Chef::Mixin::PathSanity
 
+    alias_method :original_save_updated_node, :save_updated_node
+
     def save_updated_node
-      Chef::Log.debug("Saving the current state of node #{node_name}")
-      if(@original_runlist)
-        @node.run_list(*@original_runlist)
-        @node[:runlist_override_history] = {Time.now.to_i => @override_runlist.inspect}
+      if Chef::Config[:solo]
+        Chef::Log.debug("Saving the current state of node #{node_name}")
+        if(@original_runlist)
+          @node.run_list(*@original_runlist)
+          @node[:runlist_override_history] = {Time.now.to_i => @override_runlist.inspect}
+        end
+        @node.save
+      else
+        original_save_updated_node
       end
-      @node.save
     end
   end
 end
@@ -24,6 +30,8 @@ class Chef
   class Node
 
     extend Forwardable
+
+    alias_method :original_save, :save
 
     # Save this node via the REST API
     def save
@@ -38,16 +46,9 @@ class Chef
           fh.write(node_json)
           fh.close
         end
-      else
-        # Try PUT. If the node doesn't yet exist, PUT will return 404,
-        # so then POST to create.
-        begin
-          chef_server_rest.put_rest("nodes/#{name}", self)
-        rescue Net::HTTPServerException => e
-          raise e unless e.response.code == "404"
-          chef_server_rest.post_rest("nodes", self)
-        end
         self
+      else
+        original_save
       end
     end
   end
