@@ -1,3 +1,4 @@
+name             "chef-solo-extension"
 maintainer       "Anton Panasenko"
 maintainer_email "anton.panasenko@gmail.com"
 license          "MIT"

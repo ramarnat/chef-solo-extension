@@ -26,7 +26,15 @@ class Chef
   end
 end
 
+
+
 class Chef
+  class Config
+    def self.canonicalize(path)
+      Chef::Platform.windows? ? path.gsub('/', '\\') : path
+    end
+  end
+
   class Node
 
     extend Forwardable
@@ -36,9 +44,9 @@ class Chef
     # Save this node via the REST API
     def save
       if Chef::Config[:solo]
-        json_file = File.join(Chef::Config[:node_path], "#{name.to_s}.json")
+        json_file = Chef::Config.canonicalize(File.join(Chef::Config[:nodes_path], "#{name.to_s}.json"))
         node_json = JSON.pretty_generate(self)
-        Chef::Log.debug("Node Attributes: \n #{node_json}")
+        #Chef::Log.debug("Node Attributes: \n #{node_json}")
         Chef::Log.info("Writing attributes to #{json_file}")
         begin
           # open file for write node
